@@ -33,6 +33,8 @@ function Photos({ name, photos }: { name: string; photos: string[] }) {
           key={src}
           src={src}
           alt={index === 0 ? `Foto de ${name}` : ''}
+          loading="lazy"
+          decoding="async"
           onError={() => setFailed((current) => [...current, src])}
         />
       ))}
@@ -47,7 +49,7 @@ function SignalRow({ label, signal }: { label: string; signal: Signal }) {
         <span>{label}</span>
         <em className={signal.status}>{SIGNAL_COPY[signal.status]}</em>
       </div>
-      <p>{signal.quote ?? 'En las reseñas de Google que podemos leer no aparece.'}</p>
+      {signal.quote ? <p>{signal.quote}</p> : null}
     </div>
   )
 }
@@ -61,9 +63,8 @@ export function RestaurantCard({
 }) {
   const many = (restaurant.reviewCount ?? 0) >= 200
   const few = restaurant.reviewCount != null && restaurant.reviewCount < 40
-  const high = (restaurant.rating ?? 0) >= 4.3
-  const low = restaurant.rating != null && restaurant.rating < 3.8
-  const maxWord = Math.max(1, ...restaurant.words.map((word) => word.count))
+  const reports = restaurant.priceReports
+  const terraceClear = restaurant.terrace.status === 'yes' || restaurant.terrace.status === 'no'
 
   return (
     <article
@@ -85,80 +86,82 @@ export function RestaurantCard({
         </header>
 
         <div className="meta">
-          <span className="score">
-            {restaurant.rating == null ? 'Sin nota' : ratingLabel(restaurant.rating)}
-          </span>
+          {restaurant.rating != null ? (
+            <span className="score">
+              {ratingLabel(restaurant.rating)}
+              {restaurant.tripAdvisor ? ' Google' : ''}
+            </span>
+          ) : null}
           <span>
             {restaurant.reviewCount == null
               ? 'Sin reseñas'
-              : `${countFmt.format(restaurant.reviewCount)} reseñas`}
+              : `${countFmt.format(restaurant.reviewCount)} ${restaurant.tripAdvisor ? 'en Google' : 'reseñas'}`}
           </span>
-          {high ? <em className="badge good">Nota alta</em> : null}
-          {low ? <em className="badge warn">Nota justa</em> : null}
+          {restaurant.tripAdvisor?.rating != null ? (
+            <span className="score">TripAdvisor {ratingLabel(restaurant.tripAdvisor.rating)}</span>
+          ) : null}
+          {restaurant.tripAdvisor?.reviewCount != null ? (
+            <span>{countFmt.format(restaurant.tripAdvisor.reviewCount)} en TripAdvisor</span>
+          ) : null}
           {many ? <em className="badge good">Mucha gente</em> : null}
           {few ? <em className="badge warn">Poca gente</em> : null}
-          {restaurant.priceLabel ? <span>{restaurant.priceLabel}</span> : null}
+          {restaurant.pricePerPerson ? <span>{restaurant.pricePerPerson}</span> : null}
           {restaurant.cuisine ? <span>{restaurant.cuisine}</span> : null}
-          {restaurant.openNow != null ? (
-            <span className={restaurant.openNow ? 'open' : 'closed'}>
-              {restaurant.openNow ? 'Abierto ahora' : 'Cerrado ahora'}
-            </span>
-          ) : null}
         </div>
+
+        {reports != null ? (
+          <p className="price-band">
+            <span>
+              Informado por {countFmt.format(reports)} {reports === 1 ? 'persona' : 'personas'}
+            </span>
+          </p>
+        ) : null}
+
+        {restaurant.todayHours ? (
+          <p className="hours">
+            <span>Horario de hoy</span>
+            {restaurant.todayHours}
+          </p>
+        ) : null}
 
         {restaurant.summary ? (
           <p className="summary">
             <span>{restaurant.summaryFromReviews ? 'De las reseñas' : 'Descripción'}</span>
             {restaurant.summary}
           </p>
-        ) : (
-          <p className="summary muted">Google no trae texto de este sitio.</p>
-        )}
+        ) : null}
 
-        <div className="signals">
-          <SignalRow label="Terraza" signal={restaurant.terrace} />
-          <SignalRow label="Animales" signal={restaurant.pets} />
-          <SignalRow label="Carta y precios" signal={restaurant.menu} />
-        </div>
+        {restaurant.takeaway || terraceClear ? (
+          <ul className="chips">
+            {restaurant.takeaway ? <li>Para llevar</li> : null}
+            {restaurant.terrace.status === 'yes' ? <li>Tiene terraza</li> : null}
+            {restaurant.terrace.status === 'no' ? <li className="off">Sin terraza</li> : null}
+          </ul>
+        ) : null}
 
-        {restaurant.excerpts.length ? (
-          <div className="excerpts">
-            <h4>Comentarios</h4>
-            <ul>
-              {restaurant.excerpts.map((excerpt, excerptIndex) => (
-                <li key={`${excerptIndex}-${excerpt.text}`}>
-                  {excerpt.rating != null ? <strong>{ratingLabel(excerpt.rating)}</strong> : null}
-                  {excerpt.text}
-                </li>
-              ))}
-            </ul>
+        {restaurant.pets.status === 'yes' ? (
+          <div className="signals">
+            <SignalRow label="Animales" signal={restaurant.pets} />
           </div>
         ) : null}
 
-        <div className="cloud-block">
-          <h4>Nube de palabras</h4>
-          {restaurant.words.length ? (
-            <div className="cloud" aria-label="Palabras que más se repiten en las reseñas">
+        {restaurant.words.length ? (
+          <div className="cloud-block">
+            <h4>Nube de palabras</h4>
+            <div className="topics" aria-label="Temas de las reseñas">
+              <span className="topic selected">Todas</span>
               {restaurant.words.map((word) => (
-                <span
-                  key={word.text}
-                  style={{ fontSize: `${0.9 + (word.count / maxWord) * 1.2}rem` }}
-                >
-                  {word.text}
+                <span key={word.text} className="topic">
+                  {word.text} {countFmt.format(word.count)}
                 </span>
               ))}
             </div>
-          ) : (
-            <p className="muted">Con las reseñas que devuelve Google no hay palabras que repetir.</p>
-          )}
-          <p className="caption">Hecha con las reseñas de texto que devuelve Google, hasta cinco.</p>
-        </div>
-
-        {restaurant.mapsUrl ? (
-          <a className="maps" href={restaurant.mapsUrl} target="_blank" rel="noreferrer">
-            Ver en Google Maps
-          </a>
+          </div>
         ) : null}
+
+        <a className="maps" href={restaurant.mapsUrl} target="_blank" rel="noreferrer">
+          Ver en Google Maps
+        </a>
       </div>
     </article>
   )

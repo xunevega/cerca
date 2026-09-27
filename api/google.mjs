@@ -1,10 +1,17 @@
 import { apiKey, fail, publicMessage } from './env.mjs'
+import { tripAdvisorSession } from './tripadvisor.mjs'
 import {
-  clip,
+  closedOnSearchDay,
   distanceMeters,
-  inGijon,
+  todaySchedule,
+  COUNTRIES,
+  countryOf,
+  preciseEnough,
+  zoneFor,
   isPhotoRef,
   priceLabel,
+  mergeStatus,
+  pricePerPerson,
   queryAddress,
   signalsFrom,
   wordsFrom,
@@ -30,42 +37,75 @@ function placesError(data, fallback) {
   return fail(502, publicMessage(data.error_message || data.status || fallback))
 }
 
+const OUTSIDE = 'Cerca busca en España y Portugal. Esa dirección queda fuera.'
+
+function geocodeStatus(data) {
+  if (data.status === 'REQUEST_DENIED') {
+    return fail(502, 'Google ha rechazado la clave. Activa Geocoding API en Google Cloud y revisa la clave.')
+  }
+  return fail(502, publicMessage(data.error_message || data.status || 'La geolocalización ha fallado'))
+}
+
+function originFrom(match, lat, lng, fallbackAddress) {
+  const country = countryOf(match)
+  return {
+    address: match?.formatted_address || fallbackAddress,
+    lat,
+    lng,
+    country,
+    timeZone: zoneFor(lat, lng, country),
+  }
+}
+
+async function reverseGeocode(lat, lng, key) {
+  const url = new URL('https://maps.googleapis.com/maps/api/geocode/json')
+  url.searchParams.set('latlng', `${lat},${lng}`)
+  url.searchParams.set('language', 'es')
+  url.searchParams.set('key', key)
+
+  const response = await googleFetch(url)
+  const data = await response.json()
+  if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') throw geocodeStatus(data)
+  const results = data.results || []
+  const country = results.map(countryOf).find(Boolean)
+  if (!country) {
+    throw fail(404, 'Esa ubicación no está en España ni en Portugal. Cerca solo busca allí.')
+  }
+  const match = results.find((result) => countryOf(result) === country && preciseEnough(result)) ||
+    results.find((result) => countryOf(result) === country)
+  return originFrom(match, lat, lng, `Tu ubicación en ${COUNTRIES[country]}`)
+}
+
 async function geocode(address, key) {
   const url = new URL('https://maps.googleapis.com/maps/api/geocode/json')
   url.searchParams.set('address', queryAddress(address))
-  url.searchParams.set('components', 'country:ES')
   url.searchParams.set('region', 'es')
   url.searchParams.set('language', 'es')
-  url.searchParams.set('bounds', '43.48,-5.78|43.585,-5.55')
   url.searchParams.set('key', key)
 
   const response = await googleFetch(url)
   const data = await response.json()
   if (data.status === 'ZERO_RESULTS') {
-    throw fail(404, 'No encuentro esa dirección. Prueba con la calle y el número.')
+    throw fail(404, 'No encuentro esa dirección. Revisa la calle, el número y la ciudad.')
   }
-  if (data.status === 'REQUEST_DENIED') {
-    throw fail(502, 'Google ha rechazado la clave. Activa Geocoding API en Google Cloud y revisa la clave.')
-  }
-  if (data.status !== 'OK') {
-    throw fail(502, publicMessage(data.error_message || data.status || 'La geolocalización ha fallado'))
-  }
-  const match = (data.results || []).find(inGijon)
+  if (data.status !== 'OK') throw geocodeStatus(data)
+  const inside = (data.results || []).filter((result) => countryOf(result))
+  if (!inside.length) throw fail(404, OUTSIDE)
+  const match = inside.find(preciseEnough)
   if (!match) {
-    throw fail(404, 'Esa dirección no está en Gijón. De momento solo buscamos aquí.')
+    throw fail(404, 'Google solo encuentra la ciudad o la zona. Escribe la calle, el número y la ciudad.')
   }
-  return {
-    address: match.formatted_address,
-    lat: match.geometry.location.lat,
-    lng: match.geometry.location.lng,
-  }
+  const { lat, lng } = match.geometry.location
+  return originFrom(match, lat, lng, match.formatted_address)
 }
 
-async function nearby(center, key) {
+const FOOD_TYPES = ['restaurant', 'bar', 'cafe', 'meal_takeaway', 'bakery']
+
+async function nearbyType(center, key, type) {
   const url = new URL('https://maps.googleapis.com/maps/api/place/nearbysearch/json')
   url.searchParams.set('location', `${center.lat},${center.lng}`)
   url.searchParams.set('rankby', 'distance')
-  url.searchParams.set('type', 'restaurant')
+  url.searchParams.set('type', type)
   url.searchParams.set('language', 'es')
   url.searchParams.set('key', key)
 
@@ -76,12 +116,32 @@ async function nearby(center, key) {
   return data.results || []
 }
 
+async function nearby(center, key) {
+  const batches = await Promise.all(FOOD_TYPES.map((type) => nearbyType(center, key, type)))
+  const byId = new Map()
+  for (const place of batches.flat()) {
+    if (place.place_id && !byId.has(place.place_id)) byId.set(place.place_id, place)
+  }
+  return [...byId.values()]
+}
+
 async function placeDetails(placeId, key) {
   const url = new URL('https://maps.googleapis.com/maps/api/place/details/json')
   url.searchParams.set('place_id', placeId)
   url.searchParams.set(
     'fields',
-    'reviews,editorial_summary,url,formatted_address,photos,opening_hours,business_status',
+    [
+      'reviews',
+      'editorial_summary',
+      'url',
+      'formatted_address',
+      'photos',
+      'opening_hours',
+      'current_opening_hours',
+      'business_status',
+      'price_level',
+      'takeout',
+    ].join(','),
   )
   url.searchParams.set('language', 'es')
   url.searchParams.set('reviews_no_translations', 'true')
@@ -105,13 +165,55 @@ function cuisineLabel(types) {
   return null
 }
 
+function mapsLink(placeId, name, detailsUrl) {
+  if (typeof detailsUrl === 'string' && detailsUrl.startsWith('http')) return detailsUrl
+  const url = new URL('https://www.google.com/maps/search/')
+  url.searchParams.set('api', '1')
+  url.searchParams.set('query', name || 'restaurante')
+  if (placeId) url.searchParams.set('query_place_id', placeId)
+  return url.toString()
+}
+
 function photoPath(photo) {
   const ref = photo?.photo_reference
   if (!isPhotoRef(ref)) return null
   return `/api/photo?ref=${encodeURIComponent(ref)}`
 }
 
-function toRestaurant(place, details, center) {
+// Places API (New) puede no estar activa en la clave. Si Google dice 403, se deja de
+// preguntar un rato, pero se vuelve a probar: si alguien la activa, no hace falta reiniciar.
+const PLACES_NEW_RETRY_MS = 10 * 60 * 1000
+let placesNew = 'unknown'
+let placesNewOffAt = 0
+
+async function readPriceRange(placeId, key) {
+  if (placesNew === 'off' && Date.now() - placesNewOffAt > PLACES_NEW_RETRY_MS) placesNew = 'unknown'
+  if (placesNew === 'off' || !placeId) return null
+  try {
+    const response = await googleFetch(
+      `https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}?languageCode=es`,
+      {
+        headers: {
+          'X-Goog-Api-Key': key,
+          'X-Goog-FieldMask': 'priceRange',
+        },
+      },
+    )
+    if (response.status === 403) {
+      placesNew = 'off'
+      placesNewOffAt = Date.now()
+      return null
+    }
+    if (!response.ok) return null
+    placesNew = 'on'
+    const data = await response.json()
+    return pricePerPerson(data.priceRange)
+  } catch {
+    return null
+  }
+}
+
+function toRestaurant(place, details, center, perPerson) {
   const closed =
     place.business_status === 'CLOSED_PERMANENTLY' ||
     details?.business_status === 'CLOSED_PERMANENTLY' ||
@@ -125,14 +227,19 @@ function toRestaurant(place, details, center) {
     .map((review) => ({
       rating: typeof review.rating === 'number' ? review.rating : null,
       text: typeof review.text === 'string' ? review.text.trim() : '',
+      // Con reviews_no_translations, el texto va en su idioma original.
+      lang: review.original_language || review.language || '',
     }))
     .filter((review) => review.text)
-  const texts = reviews.map((review) => review.text)
+  const texts = reviews.map((review) => ({ text: review.text, lang: review.lang }))
   const editorial = details?.editorial_summary?.overview?.trim() || ''
   const name = place.name?.trim() || 'Restaurante'
-  const joined = texts.slice(0, 2).join(' ')
   const photos = (details?.photos || place.photos || []).map(photoPath).filter(Boolean).slice(0, 3)
   const openNow = details?.opening_hours?.open_now ?? place.opening_hours?.open_now
+  const price = priceLabel(details?.price_level ?? place.price_level)
+  const fromReviews = signalsFrom(texts)
+  const fromPlace = signalsFrom(editorial ? [editorial] : [])
+  const priceText = perPerson || price
 
   return {
     id: place.place_id || name,
@@ -141,31 +248,69 @@ function toRestaurant(place, details, center) {
     distanceM: distanceMeters(center, { lat, lng }),
     rating: typeof place.rating === 'number' ? place.rating : null,
     reviewCount: typeof place.user_ratings_total === 'number' ? place.user_ratings_total : null,
-    priceLabel: priceLabel(place.price_level),
+    priceLabel: price,
+    pricePerPerson: perPerson,
+    priceReports: null,
     cuisine: cuisineLabel(place.types),
     openNow: typeof openNow === 'boolean' ? openNow : null,
-    mapsUrl: details?.url || null,
-    summary: editorial || (joined ? clip(joined, 320) : null),
-    summaryFromReviews: !editorial && Boolean(joined),
+    todayHours: todaySchedule(details?.opening_hours, details?.current_opening_hours, new Date(), center.timeZone),
+    mapsUrl: mapsLink(place.place_id, name, details?.url),
+    summary: editorial || null,
+    summaryFromReviews: false,
     photos,
-    ...signalsFrom(texts),
+    terrace: { status: mergeStatus(fromReviews.terrace.status, fromPlace.terrace.status), quote: null },
+    pets: { status: mergeStatus(fromReviews.pets.status, fromPlace.pets.status), quote: null },
+    menu: {
+      status: 'yes',
+      quote: `Google marca el precio como ${priceText}.`,
+    },
     words: wordsFrom(texts, name),
-    excerpts: reviews.slice(0, 3).map((review) => ({
-      rating: review.rating,
-      text: clip(review.text, 200),
-    })),
+    takeaway: details?.takeout === true || fromReviews.takeaway.status === 'yes' || fromPlace.takeaway.status === 'yes',
+    tripAdvisor: null,
+    lat,
+    lng,
   }
 }
 
+const MAX_RESULTS = 10
+const BATCH = 12
+
+async function readPriceRanges(batch, key) {
+  const out = batch.map(() => null)
+  if (!batch.length) return out
+  let from = 0
+  // La primera llamada comprueba si Places API (New) responde antes de lanzar el resto.
+  if (placesNew !== 'on') {
+    out[0] = await readPriceRange(batch[0].place.place_id, key)
+    from = 1
+    if (placesNew !== 'on') return out
+  }
+  const rest = await Promise.all(batch.slice(from).map((item) => readPriceRange(item.place.place_id, key)))
+  rest.forEach((value, index) => {
+    out[index + from] = value
+  })
+  return out
+}
+
+function finiteCoord(value, limit) {
+  const number = Number(value)
+  return Number.isFinite(number) && Math.abs(number) <= limit ? number : null
+}
+
 export async function searchRestaurants(body) {
-  const address = String(body?.address || '').trim()
+  const address = String(body?.address || '').trim().replace(/\s+/g, ' ')
   const radius = Number(body?.radius)
-  if (address.length < 3) throw fail(400, 'Escribe una calle o un sitio de Gijón.')
+  const lat = finiteCoord(body?.lat, 90)
+  const lng = finiteCoord(body?.lng, 180)
+  const hasPoint = lat != null && lng != null
+  if (!hasPoint && address.length < 3) throw fail(400, 'Escribe una dirección o usa tu ubicación.')
   if (address.length > 180) throw fail(400, 'La dirección es demasiado larga.')
   if (![100, 200, 300].includes(radius)) throw fail(400, 'Elige 100, 200 o 300 metros.')
 
   const key = apiKey()
-  const origin = await geocode(address, key)
+  const origin = hasPoint ? await reverseGeocode(lat, lng, key) : await geocode(address, key)
+  // La lista cercana de TripAdvisor se pide ya, en paralelo con la de Google.
+  const tripAdvisor = tripAdvisorSession(origin, radius)
   const places = (await nearby(origin, key))
     .map((place) => {
       const lat = place.geometry?.location?.lat
@@ -175,18 +320,35 @@ export async function searchRestaurants(body) {
     })
     .filter((item) => item && item.distanceM <= radius)
     .sort((a, b) => a.distanceM - b.distanceM || (b.place.rating ?? 0) - (a.place.rating ?? 0))
-    .slice(0, 10)
+    .slice(0, 30)
 
-  const details = await Promise.all(places.map((item) => placeDetails(item.place.place_id, key)))
-  const restaurants = places
-    .map((item, index) => toRestaurant(item.place, details[index], origin))
-    .filter(Boolean)
+  // Se va en tandas por distancia y se para al tener diez. El resultado es el mismo que
+  // pedir las treinta fichas (los diez primeros que cumplen, en orden de distancia), pero
+  // casi nunca hace falta más de una tanda, y cada ficha de Google o TripAdvisor cuesta.
+  const accepted = []
+  for (let start = 0; start < places.length && accepted.length < MAX_RESULTS; start += BATCH) {
+    const batch = places.slice(start, start + BATCH)
+    const [details, priceRanges] = await Promise.all([
+      Promise.all(batch.map((item) => placeDetails(item.place.place_id, key))),
+      readPriceRanges(batch, key),
+    ])
+    const candidates = batch
+      .map((item, index) => toRestaurant(item.place, details[index], origin, priceRanges[index]))
+      .filter(Boolean)
+    for (const restaurant of await tripAdvisor.enrich(candidates)) {
+      const priced =
+        restaurant.priceLabel || restaurant.pricePerPerson || restaurant.tripAdvisor?.priceLevel
+      if (priced && !closedOnSearchDay(restaurant.todayHours)) accepted.push(restaurant)
+    }
+  }
 
   return {
     resolvedAddress: origin.address,
+    country: origin.country,
+    timeZone: origin.timeZone,
     radius,
     center: { lat: origin.lat, lng: origin.lng },
-    restaurants,
+    restaurants: accepted.slice(0, MAX_RESULTS),
   }
 }
 

@@ -12,11 +12,6 @@ export type Word = {
   count: number
 }
 
-export type Excerpt = {
-  rating: number | null
-  text: string
-}
-
 export type Restaurant = {
   id: string
   name: string
@@ -25,9 +20,12 @@ export type Restaurant = {
   rating: number | null
   reviewCount: number | null
   priceLabel: string | null
+  pricePerPerson: string | null
+  priceReports: number | null
   cuisine: string | null
   openNow: boolean | null
-  mapsUrl: string | null
+  todayHours: string | null
+  mapsUrl: string
   summary: string | null
   summaryFromReviews: boolean
   photos: string[]
@@ -35,11 +33,19 @@ export type Restaurant = {
   pets: Signal
   menu: Signal
   words: Word[]
-  excerpts: Excerpt[]
+  takeaway: boolean
+  tripAdvisor: {
+    rating: number | null
+    reviewCount: number | null
+    priceLevel: string | null
+  } | null
 }
 
 export type SearchResponse = {
   resolvedAddress: string
+  country: 'ES' | 'PT' | null
+  /** Zona horaria del sitio buscado: Europe/Madrid, Europe/Lisbon, Atlantic/Canary… */
+  timeZone: string
   radius: Radius
   center: { lat: number; lng: number }
   restaurants: Restaurant[]

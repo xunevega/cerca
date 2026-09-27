@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "start": "node server.mjs",
-    "test": "node --test api/text.test.mjs",
+    "test": "node --test api/text.test.mjs src/reuse.test.mjs",
     "preview": "vite preview"
   },
   "engines": {

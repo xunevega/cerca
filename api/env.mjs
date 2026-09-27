@@ -53,6 +53,11 @@ export function apiKey() {
   return key
 }
 
+export function tripAdvisorKey() {
+  loadEnv()
+  return process.env.TRIPADVISOR_API_KEY?.trim() || null
+}
+
 export function publicMessage(value) {
   return String(value || 'Google no ha respondido')
     .replace(/key=[^&\s]+/gi, 'key=…')
