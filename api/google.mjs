@@ -235,7 +235,7 @@ async function readPriceRange(placeId, key) {
       {
         headers: {
           'X-Goog-Api-Key': key,
-          'X-Goog-FieldMask': 'priceRange,primaryType',
+          'X-Goog-FieldMask': 'priceRange,primaryType,types',
         },
       },
     )
@@ -250,6 +250,7 @@ async function readPriceRange(placeId, key) {
     return {
       perPerson: pricePerPerson(data.priceRange),
       primaryType: typeof data.primaryType === 'string' ? data.primaryType : null,
+      types: Array.isArray(data.types) ? data.types : [],
     }
   } catch {
     return null
@@ -272,7 +273,7 @@ function toRestaurant(place, details, center, fromNew) {
     servesLunch: details?.serves_lunch,
     servesDinner: details?.serves_dinner,
     primaryType: fromNew?.primaryType,
-    types: place.types,
+    types: [...(fromNew?.types || []), ...(place.types || [])],
   })
   if (!eats) return null
 

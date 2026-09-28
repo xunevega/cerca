@@ -93,6 +93,7 @@ Solo entran sitios donde se puede comer:
 
 - No entra un sitio solo para llevar: si Google dice que no se consume en el local, queda fuera. Que un sitio tenga para llevar es un dato de la ficha, no decide si entra.
 - Dulce, fuera siempre: si el tipo principal en Google es panadería, pastelería, tienda de postres, confitería, bombonería, heladería, zumería, tetería o donuts, el sitio no entra aunque Google diga que sirve comidas.
+- Si alguno de sus tipos en Google es de dulce (aunque el principal diga otra cosa) y Google no dice que sirva comida o cena, no entra.
 - El desayuno no cuenta como comida. Entra un sitio si Google dice que sirve comida o cena.
 - Si Google no dice nada de comidas ni cenas, se mira su tipo principal: panaderías, pastelerías, cafeterías, cafés, heladerías, bombonerías, teterías, zumerías y sitios de desayunos quedan fuera, y también los bares, pubs y bares de copas. Los restaurantes entran. Si Google dice que no sirve ni comida ni cena, queda fuera aunque sea restaurante.
 - Un bar solo entra si Google dice que sirve comida o cena.

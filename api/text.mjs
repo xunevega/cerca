@@ -304,6 +304,8 @@ export function eatsHere({ dineIn, servesLunch, servesDinner, primaryType, types
   if (dineIn === false) return false
   if (primaryType && SWEET_TYPES.has(primaryType)) return false
   if (servesLunch === true || servesDinner === true) return true
+  // Algún tipo de dulce y sin comidas ni cenas: fuera, aunque el tipo principal diga otra cosa.
+  if ((types || []).some((type) => SWEET_TYPES.has(type))) return false
   if (servesLunch === false && servesDinner === false) return false
   const main = primaryType || null
   if (main) return !NO_MEAL_TYPES.has(main) && !BAR_TYPES.has(main)

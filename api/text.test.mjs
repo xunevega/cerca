@@ -270,6 +270,10 @@ test('solo entra donde se come: fuera solo para llevar y lo que solo da desayuno
   // Heladería o pastelería: fuera aunque Google diga que da comidas.
   assert.equal(eatsHere({ dineIn: true, servesLunch: true, primaryType: 'ice_cream_shop' }), false)
   assert.equal(eatsHere({ dineIn: true, servesLunch: true, servesDinner: true, primaryType: 'bakery' }), false)
+  // Tipo principal equivocado en Google pero con tipos de dulce y sin comidas: fuera.
+  assert.equal(eatsHere({ primaryType: 'korean_restaurant', types: ['cafe', 'dessert_shop', 'confectionery'] }), false)
+  // Restaurante con tipos de dulce que sí da comidas: entra.
+  assert.equal(eatsHere({ primaryType: 'restaurant', servesLunch: true, types: ['restaurant', 'pastry_shop'] }), true)
   // Cafetería que da comidas: entra.
   assert.equal(eatsHere({ dineIn: true, servesLunch: true, primaryType: 'cafe' }), true)
   // Bar sin datos de comidas: fuera. Bar que da comidas: entra.
