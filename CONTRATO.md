@@ -65,7 +65,7 @@ El botón «Ubicación actual» lee el GPS y la red del propio dispositivo, con 
 
 Entra un sitio si Google o TripAdvisor marcan precio. El precio de Google puede ser el nivel o el rango en euros de Places API (New), si esa API está activa. El de TripAdvisor es su nivel de precio. No se inventa un rango en euros a partir del nivel.
 
-No entra un sitio cerrado todo el día de la consulta. Si ese día abre, entra aunque en ese momento esté cerrado. El día y el horario son los de la hora local del sitio (ver «Dónde busca»). Se usa el de Google. El de TripAdvisor solo rellena el hueco si Google no trae horas y el horario de TripAdvisor está en una zona que da la misma hora que la local.
+No entra un sitio cerrado todo el día de la consulta. Si ese día abre, entra aunque en ese momento esté cerrado. Lo que queda abierto de madrugada de la noche anterior (por ejemplo, de 00:00 a 02:30 tras abrir el domingo) no cuenta como que abra ese día. El día y el horario son los de la hora local del sitio (ver «Dónde busca»). Se usa el de Google. El de TripAdvisor solo rellena el hueco si Google no trae horas y el horario de TripAdvisor está en una zona que da la misma hora que la local.
 
 No entra un sitio cerrado de forma permanente.
 
@@ -84,7 +84,7 @@ Google y TripAdvisor forman una sola ficha. No hay enlace a TripAdvisor.
 - Para llevar, si lo marca Google o si las reseñas o la información del local de TripAdvisor lo dicen, en español, portugués o inglés.
 - Terraza, «Tiene terraza» o «Sin terraza», si queda claro en las reseñas o en la información del local. Si no se menciona, no sale. No se leen los pies de foto: a TripAdvisor no se le piden fotos.
 - Animales, solo si las reseñas lo confirman o lo dice el local. Si no, no se enseña.
-- Nube de palabras: las que salen en las reseñas de texto de Google, en su idioma original, y en las reseñas en español y en portugués de TripAdvisor, hasta doce, con su número. Se quitan las palabras vacías del español, el portugués y el inglés, y el nombre del sitio. La primera pastilla es «Todas».
+- Nube de palabras: las que salen en las reseñas en español y en portugués de Google y de TripAdvisor, hasta doce, con su número. Se quitan las palabras vacías del español, el portugués y el inglés, y el nombre del sitio. La primera pastilla es «Todas».
 
 El emparejamiento con TripAdvisor es por nombre parecido y a menos de 100 m. Al comparar nombres no cuentan palabras como restaurante, bar, cafetería, café, pastelaria, padaria, tasca, taberna, marisqueira, churrasqueira, cervecería, cervejaria o sidrería. En Portugal se piden a TripAdvisor las reseñas en portugués; en España, en español. Si no hay ficha, la tarjeta se queda solo con Google.
 

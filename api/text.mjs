@@ -109,7 +109,11 @@ export function todaySchedule(openingHours, currentOpeningHours, now = new Date(
   if (today.dayIndex < 0) return null
   const currentPeriods = currentOpeningHours?.periods
   if (Array.isArray(currentPeriods) && currentPeriods.some((period) => period.open?.date)) {
-    const todays = currentPeriods.filter((period) => period.open?.date === today.date)
+    // Un tramo «truncated» que empieza hoy a las 00:00 es la cola de la noche anterior
+    // (p. ej. un bar abierto el domingo hasta las 02:30): no cuenta como que abra hoy.
+    const todays = currentPeriods.filter(
+      (period) => period.open?.date === today.date && !period.open?.truncated,
+    )
     return `${today.dayLabel} · ${rangesFromPeriods(todays)}`
   }
   const regular = (openingHours?.periods || []).filter((period) => period.open?.day === today.dayIndex)

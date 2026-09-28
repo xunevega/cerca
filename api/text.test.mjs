@@ -237,3 +237,16 @@ test('el horario sale en la hora de Lisboa', () => {
   assert.match(todaySchedule({ periods }, null, madridSunday, 'Europe/Lisbon'), /^Sábado · 12:00–23:59$/)
   assert.equal(todaySchedule({ periods }, null, madridSunday, 'Europe/Madrid'), null)
 })
+
+test('la cola de la noche anterior no cuenta como horario de hoy', () => {
+  const monday = new Date('2026-09-28T10:00:00Z')
+  const current = {
+    periods: [
+      { open: { date: '2026-09-28', day: 1, time: '0000', truncated: true }, close: { date: '2026-09-28', day: 1, time: '0230' } },
+      { open: { date: '2026-09-29', day: 2, time: '2000' }, close: { date: '2026-09-30', day: 3, time: '0230' } },
+    ],
+  }
+  assert.equal(todaySchedule(null, current, monday, 'Europe/Madrid'), 'Lunes · Cerrado')
+  const normal = { periods: [{ open: { date: '2026-09-28', day: 1, time: '0700' }, close: { date: '2026-09-29', day: 2, time: '0030' } }] }
+  assert.equal(todaySchedule(null, normal, monday, 'Europe/Madrid'), 'Lunes · 07:00–00:30')
+})

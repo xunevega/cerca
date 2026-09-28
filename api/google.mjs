@@ -14,6 +14,7 @@ import {
   pricePerPerson,
   queryAddress,
   signalsFrom,
+  textLanguage,
   wordsFrom,
 } from './text.mjs'
 
@@ -264,7 +265,8 @@ function toRestaurant(place, details, center, perPerson) {
       status: 'yes',
       quote: `Google marca el precio como ${priceText}.`,
     },
-    words: wordsFrom(texts, name),
+    // La nube solo usa reseñas en español y portugués: en otros idiomas salen «die», «ein», «est»…
+    words: wordsFrom(texts.filter((item) => ['es', 'pt'].includes(textLanguage(item.text, item.lang))), name),
     takeaway: details?.takeout === true || fromReviews.takeaway.status === 'yes' || fromPlace.takeaway.status === 'yes',
     tripAdvisor: null,
     lat,
