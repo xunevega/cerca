@@ -1,6 +1,6 @@
 # Cerca
 
-Sitios para comer a la redonda en España y Portugal: restaurantes, bares, cafeterías, tapas o bocadillos. Escribes una dirección de cualquier punto de los dos países (calle, número y ciudad) o usas la ubicación actual, eliges 100, 200 o 300 metros, y la app enseña hasta seis fichas ordenadas por distancia.
+Sitios para comer a la redonda en España y Portugal: restaurantes, bares, cafeterías, tapas o bocadillos. Escribes una dirección de cualquier punto de los dos países (calle, número y ciudad) o usas la ubicación actual, eliges 100, 200 o 300 metros, y la app enseña los seis sitios mejor valorados del radio (nota de Google ponderada por el número de reseñas).
 
 La pantalla está siempre en español. La dirección se sitúa con Google Maps; no hay lista de ciudades. La ficha junta la puntuación y las reseñas de Google y, cuando hay ficha, las de TripAdvisor, más el horario, la terraza y una nube hecha con los dos. Ver en Google Maps abre siempre el sitio en Google.
 
@@ -34,7 +34,7 @@ La clave se queda en el servidor. El navegador no la ve.
 
 ## Qué hace la ficha
 
-- Distancia en metros, del más cercano al más lejano
+- Distancia en metros
 - Nota y cuánta gente ha opinado
 - Hasta tres fotos
 - Resumen
@@ -53,10 +53,10 @@ Places API, la clásica, sigue haciendo la búsqueda. Para el rango en euros hay
 ## Protecciones del servidor
 
 - Tope por IP y minuto: 20 búsquedas y 150 fotos. Pasado el tope, responde 429 con un aviso en español.
-- La búsqueda va en tandas por distancia y para al tener seis fichas. El resultado es el mismo que pedirlas todas, con menos llamadas de pago a Google y TripAdvisor.
+- La búsqueda va en tandas, de mejor a peor nota, y para al tener seis fichas. El resultado es el mismo que pedirlas todas, con menos llamadas de pago a Google y TripAdvisor.
 - Los errores internos o de red no llegan en inglés a la pantalla; se registran en el servidor.
 - Los ficheros de `dist/assets` se sirven con caché larga (llevan hash) e `index.html` sin caché.
-- Cambiar de radio no siempre llama al servidor. La página reutiliza durante 10 minutos lo que ya ha recibido, y un radio menor se saca de uno mayor cuando es seguro. En el servidor no se guarda nada de Google ni de TripAdvisor.
+- Cambiar de radio no siempre llama al servidor. La página reutiliza durante 10 minutos lo que ya ha recibido para el mismo radio. En el servidor no se guarda nada de Google ni de TripAdvisor.
 - «Ubicación actual» usa solo el GPS y la red del dispositivo. La Geolocation API de Google ya no hace falta.
 
 El contrato vigente es `CONTRATO.md`. Los anteriores están en `contratos/`.

@@ -8,7 +8,7 @@ Este contrato fija Cerca tal como está hoy. Recoge en un solo texto los contrat
 
 Cerca enseña sitios para comer en España y Portugal: restaurantes, bares, cafeterías, panaderías, tapas o bocadillos. El idioma de la pantalla es siempre el español, también cuando se busca en Portugal.
 
-Se escribe una dirección de cualquier punto de España o Portugal, o se usa la ubicación actual. No hay lista de ciudades: vale cualquier calle que Google sitúe en uno de los dos países. El radio es 100, 200 o 300 metros. Salen como mucho seis fichas, de la más cercana a la más lejana.
+Se escribe una dirección de cualquier punto de España o Portugal, o se usa la ubicación actual. No hay lista de ciudades: vale cualquier calle que Google sitúe en uno de los dos países. El radio es 100, 200 o 300 metros. Salen como mucho seis fichas: las mejor valoradas del radio, de mejor a peor nota.
 
 La dirección se sitúa con Google Maps. La ficha junta Google y TripAdvisor. El enlace de cada ficha abre siempre Google Maps.
 
@@ -35,9 +35,11 @@ La zona sale del país y de la posición del punto buscado, y vale para todos lo
 - Radio solo 100, 200 o 300 metros. Al cambiar el radio se enseña el resultado de la última búsqueda para ese radio (ver «Cambiar de radio»).
 - Tres atajos en pantalla, solo para probar: Gran Vía 28, Madrid · Rua Augusta 100, Lisboa · Calle Corrida 20, Gijón. Un atajo borra la ubicación actual, rellena la dirección y busca.
 - Si se edita la dirección a mano, se deja de usar el punto de ubicación actual. Si en ese momento se estaba leyendo el GPS, esa lectura se descarta.
-- Tipos de Google: restaurante, bar, cafetería, para llevar y panadería. Se quitan los repetidos.
-- Se toman los 30 más cercanos dentro del radio. Luego se quedan los que tienen precio y no están cerrados todo el día de la consulta. De esos, los 6 más cercanos.
-- Esos 30 se revisan en tandas de 8, de más cerca a más lejos, y se para al tener seis. El resultado es el mismo que revisar los 30; solo cambia cuántas fichas se piden a Google y a TripAdvisor.
+- Tipos de Google: restaurante, bar, cafetería, para llevar y panadería. De cada tipo, Google da los 20 sitios más destacados dentro del radio. Se quitan los repetidos.
+- Todos los sitios del radio se ordenan por nota ponderada: la nota de Google corregida por el número de reseñas (media bayesiana con 30 reseñas de peso y la nota media de los sitios del radio). Así un 4,6 con 800 reseñas va por delante de un 5,0 con 3. Un sitio sin nota cuenta como la media menos 0,25. A igual nota, va antes el más cercano.
+- Se toman los 30 primeros. Luego se quedan los que tienen precio y no están cerrados todo el día de la consulta. De esos, los 6 primeros, en ese orden.
+- Al cambiar el radio cambia la lista: a 300 m pueden entrar sitios mejor valorados que no caben en 200 m.
+- Esos 30 se revisan en tandas de 8, de mejor a peor nota, y se para al tener seis. El resultado es el mismo que revisar los 30; solo cambia cuántas fichas se piden a Google y a TripAdvisor.
 
 ## Ubicación actual
 
@@ -56,10 +58,8 @@ El botón «Ubicación actual» lee el GPS y la red del propio dispositivo, con 
 ## Cambiar de radio
 
 - Si en los últimos 10 minutos, en la misma página y el mismo día en la hora local del sitio buscado, ya se hizo esa búsqueda con ese radio (la misma dirección, sin contar mayúsculas ni espacios de más, o el mismo punto), se enseña sin volver a pedirla.
-- Si solo se hizo con un radio mayor, el menor se saca de ella cuando es seguro: cuando trajo menos de seis sitios o cuando el sexto queda más lejos que el radio nuevo. Si no es seguro, se pide de nuevo.
-- Un radio mayor siempre se pide.
+- Un radio distinto siempre se pide de nuevo, porque la lista cambia con el radio.
 - La página recuerda como mucho 30 búsquedas. No se guarda nada en el servidor ni en el almacenamiento del navegador; al cerrar o recargar la página, se olvida todo.
-- Al sacar un radio menor de uno mayor, TripAdvisor se consultó con el radio mayor. En casos raros, un sitio cercano puede quedar emparejado con su ficha de TripAdvisor cuando una búsqueda directa con el radio menor no la habría encontrado. Se acepta.
 
 ## Quién entra en la lista
 

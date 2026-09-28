@@ -250,3 +250,12 @@ test('la cola de la noche anterior no cuenta como horario de hoy', () => {
   const normal = { periods: [{ open: { date: '2026-09-28', day: 1, time: '0700' }, close: { date: '2026-09-29', day: 2, time: '0030' } }] }
   assert.equal(todaySchedule(null, normal, monday, 'Europe/Madrid'), 'Lunes · 07:00–00:30')
 })
+
+test('la nota ponderada premia muchas reseñas frente a pocas', async () => {
+  const { weightedRating, localMeanRating } = await import('./text.mjs')
+  const mean = localMeanRating([{ rating: 4.2, user_ratings_total: 100 }, { rating: 4.4, user_ratings_total: 50 }])
+  assert.ok(Math.abs(mean - 4.3) < 1e-9)
+  assert.ok(weightedRating(4.6, 800, mean) > weightedRating(5, 3, mean))
+  assert.ok(weightedRating(4.5, 200, mean) > weightedRating(4.2, 200, mean))
+  assert.ok(weightedRating(null, 0, mean) < mean)
+})

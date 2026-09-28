@@ -199,6 +199,22 @@ export function distanceMeters(a, b) {
   return Math.round(2 * R * Math.asin(Math.min(1, Math.sqrt(h))))
 }
 
+// Nota ponderada (media bayesiana): la nota de Google se acerca a la media de la zona
+// cuando hay pocas reseñas. Un 4,6 con 800 reseñas gana a un 5,0 con 3.
+export const RATING_PRIOR_COUNT = 30
+
+export function localMeanRating(places) {
+  const rated = places.filter((p) => typeof p.rating === 'number' && (p.user_ratings_total || 0) > 0)
+  if (!rated.length) return 4
+  return rated.reduce((sum, p) => sum + p.rating, 0) / rated.length
+}
+
+export function weightedRating(rating, count, mean, prior = RATING_PRIOR_COUNT) {
+  const votes = typeof count === 'number' && count > 0 && typeof rating === 'number' ? count : 0
+  if (!votes) return mean - 0.25
+  return (votes / (votes + prior)) * rating + (prior / (votes + prior)) * mean
+}
+
 export function priceLabel(level) {
   if (level == null || level === 'PRICE_LEVEL_UNSPECIFIED') return null
   if (typeof level === 'number') return ['Gratis', '€', '€€', '€€€', '€€€€'][level] ?? null

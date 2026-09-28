@@ -3,9 +3,7 @@ import type { Radius, SearchResponse } from './types'
 // ——— Reutilizar búsquedas de esta misma página (ver CONTRATO.md) ———
 // No se guarda nada en el servidor ni en el navegador: solo se vuelve a enseñar lo que la
 // página ya ha recibido, durante unos minutos y siempre el mismo día en la hora del sitio buscado.
-const RADII: Radius[] = [100, 200, 300]
 const REUSE_MS = 10 * 60 * 1000
-const MAX_RESULTS = 6
 export type Origin = { address: string } | { lat: number; lng: number }
 export type Kept = { at: number; day: string; zone: string; data: SearchResponse }
 
@@ -30,26 +28,12 @@ function fresh(kept: Kept | undefined, now: number) {
 }
 
 /**
- * Busca un resultado ya recibido para ese origen y radio. Si solo hay uno de radio mayor,
- * vale cuando cubre seguro el menor: o trae menos de seis sitios (estaban todos) o el
- * último queda más lejos que el radio pedido (todos los que caben están antes que él).
+ * Devuelve un resultado ya recibido para ese mismo origen y radio. Un radio distinto
+ * siempre se pide: la lista son los mejor valorados del radio y cambia con él.
  */
 export function reuse(kept: Map<string, Kept>, origin: Origin, radius: Radius): SearchResponse | null {
-  const now = Date.now()
-  const key = originKey(origin)
-  const exact = fresh(kept.get(`${key}|${radius}`), now)
-  if (exact) return exact.data
-  for (const bigger of RADII) {
-    if (bigger <= radius) continue
-    const entry = fresh(kept.get(`${key}|${bigger}`), now)
-    if (!entry) continue
-    const list = entry.data.restaurants
-    const last = list[list.length - 1]
-    if (list.length < MAX_RESULTS || (last && last.distanceM > radius)) {
-      return { ...entry.data, radius, restaurants: list.filter((item) => item.distanceM <= radius) }
-    }
-  }
-  return null
+  const entry = fresh(kept.get(`${originKey(origin)}|${radius}`), Date.now())
+  return entry ? entry.data : null
 }
 
 export function keep(kept: Map<string, Kept>, origin: Origin, data: SearchResponse) {

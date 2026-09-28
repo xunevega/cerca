@@ -3,6 +3,8 @@ import { tripAdvisorSession } from './tripadvisor.mjs'
 import {
   closedOnSearchDay,
   distanceMeters,
+  localMeanRating,
+  weightedRating,
   todaySchedule,
   COUNTRIES,
   countryOf,
@@ -102,10 +104,12 @@ async function geocode(address, key) {
 
 const FOOD_TYPES = ['restaurant', 'bar', 'cafe', 'meal_takeaway', 'bakery']
 
-async function nearbyType(center, key, type) {
+// Con `radius` Google devuelve los 20 sitios más destacados de cada tipo dentro del radio,
+// no los 20 más cercanos: así a 300 m también llegan los buenos que están lejos.
+async function nearbyType(center, key, type, radius) {
   const url = new URL('https://maps.googleapis.com/maps/api/place/nearbysearch/json')
   url.searchParams.set('location', `${center.lat},${center.lng}`)
-  url.searchParams.set('rankby', 'distance')
+  url.searchParams.set('radius', String(radius))
   url.searchParams.set('type', type)
   url.searchParams.set('language', 'es')
   url.searchParams.set('key', key)
@@ -117,8 +121,8 @@ async function nearbyType(center, key, type) {
   return data.results || []
 }
 
-async function nearby(center, key) {
-  const batches = await Promise.all(FOOD_TYPES.map((type) => nearbyType(center, key, type)))
+async function nearby(center, key, radius) {
+  const batches = await Promise.all(FOOD_TYPES.map((type) => nearbyType(center, key, type, radius)))
   const byId = new Map()
   for (const place of batches.flat()) {
     if (place.place_id && !byId.has(place.place_id)) byId.set(place.place_id, place)
@@ -313,7 +317,7 @@ export async function searchRestaurants(body) {
   const origin = hasPoint ? await reverseGeocode(lat, lng, key) : await geocode(address, key)
   // La lista cercana de TripAdvisor se pide ya, en paralelo con la de Google.
   const tripAdvisor = tripAdvisorSession(origin, radius)
-  const places = (await nearby(origin, key))
+  const inRadius = (await nearby(origin, key, radius))
     .map((place) => {
       const lat = place.geometry?.location?.lat
       const lng = place.geometry?.location?.lng
@@ -321,12 +325,17 @@ export async function searchRestaurants(body) {
       return { place, distanceM: distanceMeters(origin, { lat, lng }) }
     })
     .filter((item) => item && item.distanceM <= radius)
-    .sort((a, b) => a.distanceM - b.distanceM || (b.place.rating ?? 0) - (a.place.rating ?? 0))
+  // Todos los del radio, ordenados por nota ponderada (a igualdad, el más cercano).
+  // La nota y las reseñas llegan con la lista cercana: ordenar no cuesta llamadas.
+  const mean = localMeanRating(inRadius.map((item) => item.place))
+  const places = inRadius
+    .map((item) => ({ ...item, score: weightedRating(item.place.rating, item.place.user_ratings_total, mean) }))
+    .sort((a, b) => b.score - a.score || a.distanceM - b.distanceM)
     .slice(0, 30)
 
-  // Se va en tandas por distancia y se para al tener seis. El resultado es el mismo que
-  // pedir las treinta fichas (los seis primeros que cumplen, en orden de distancia), pero
-  // casi nunca hace falta más de una tanda, y cada ficha de Google o TripAdvisor cuesta.
+  // Se revisan en tandas, de mejor a peor nota, y se para al tener seis. El resultado es el
+  // mismo que pedir las treinta fichas (los seis mejores que cumplen), pero casi nunca hace
+  // falta más de una tanda, y cada ficha de Google o TripAdvisor cuesta.
   const accepted = []
   for (let start = 0; start < places.length && accepted.length < MAX_RESULTS; start += BATCH) {
     const batch = places.slice(start, start + BATCH)

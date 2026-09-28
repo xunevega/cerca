@@ -28,28 +28,13 @@ test('devuelve la misma búsqueda sin volver a pedirla', () => {
   assert.equal(reuse(kept, origin, 300), null)
 })
 
-test('saca el radio menor de uno mayor cuando es seguro', () => {
-  const kept = new Map()
-  const origin = { lat: 43.54, lng: -5.66 }
-  keep(kept, origin, response(300, [10, 40, 90, 120, 150, 180]))
-  const small = reuse(kept, origin, 100)
-  assert.equal(small.radius, 100)
-  assert.deepEqual(small.restaurants.map((r) => r.distanceM), [10, 40, 90])
-})
-
-test('no lo saca si con seis sitios el último no pasa del radio', () => {
+test('un radio distinto siempre se vuelve a pedir', () => {
   const kept = new Map()
   const origin = { address: 'Rua Augusta 20, Lisboa' }
-  keep(kept, origin, response(300, [5, 10, 20, 30, 40, 95]))
+  keep(kept, origin, response(300, [30, 60, 250]))
   assert.equal(reuse(kept, origin, 100), null)
   assert.equal(reuse(kept, origin, 200), null)
-})
-
-test('con menos de seis sitios estaban todos', () => {
-  const kept = new Map()
-  const origin = { address: 'Gran Vía 1, Madrid' }
-  keep(kept, origin, response(300, [30, 60, 250]))
-  assert.deepEqual(reuse(kept, origin, 100).restaurants.map((r) => r.distanceM), [30, 60])
+  assert.equal(reuse(kept, origin, 300).restaurants.length, 3)
 })
 
 test('caduca a los diez minutos', () => {
