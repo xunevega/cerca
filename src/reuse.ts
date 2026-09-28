@@ -5,7 +5,7 @@ import type { Radius, SearchResponse } from './types'
 // página ya ha recibido, durante unos minutos y siempre el mismo día en la hora del sitio buscado.
 const RADII: Radius[] = [100, 200, 300]
 const REUSE_MS = 10 * 60 * 1000
-const MAX_RESULTS = 10
+const MAX_RESULTS = 6
 export type Origin = { address: string } | { lat: number; lng: number }
 export type Kept = { at: number; day: string; zone: string; data: SearchResponse }
 
@@ -31,7 +31,7 @@ function fresh(kept: Kept | undefined, now: number) {
 
 /**
  * Busca un resultado ya recibido para ese origen y radio. Si solo hay uno de radio mayor,
- * vale cuando cubre seguro el menor: o trae menos de diez sitios (estaban todos) o el
+ * vale cuando cubre seguro el menor: o trae menos de seis sitios (estaban todos) o el
  * último queda más lejos que el radio pedido (todos los que caben están antes que él).
  */
 export function reuse(kept: Map<string, Kept>, origin: Origin, radius: Radius): SearchResponse | null {

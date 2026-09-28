@@ -194,7 +194,7 @@ export function App() {
         <p className="kicker">España y Portugal</p>
         <h1>Cerca</h1>
         <p className="lede">
-          Hasta diez sitios para comer, del más cercano al más lejano, en cualquier punto de España
+          Hasta seis sitios para comer, del más cercano al más lejano, en cualquier punto de España
           o Portugal. Escribe una dirección o usa tu ubicación. Restaurantes, bares, cafeterías,
           tapas o bocadillos.
         </p>

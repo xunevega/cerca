@@ -274,8 +274,8 @@ function toRestaurant(place, details, center, perPerson) {
   }
 }
 
-const MAX_RESULTS = 10
-const BATCH = 12
+const MAX_RESULTS = 6
+const BATCH = 8
 
 async function readPriceRanges(batch, key) {
   const out = batch.map(() => null)
@@ -324,8 +324,8 @@ export async function searchRestaurants(body) {
     .sort((a, b) => a.distanceM - b.distanceM || (b.place.rating ?? 0) - (a.place.rating ?? 0))
     .slice(0, 30)
 
-  // Se va en tandas por distancia y se para al tener diez. El resultado es el mismo que
-  // pedir las treinta fichas (los diez primeros que cumplen, en orden de distancia), pero
+  // Se va en tandas por distancia y se para al tener seis. El resultado es el mismo que
+  // pedir las treinta fichas (los seis primeros que cumplen, en orden de distancia), pero
   // casi nunca hace falta más de una tanda, y cada ficha de Google o TripAdvisor cuesta.
   const accepted = []
   for (let start = 0; start < places.length && accepted.length < MAX_RESULTS; start += BATCH) {
