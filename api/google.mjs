@@ -168,7 +168,11 @@ async function placeDetails(placeId, key) {
 
 function cuisineLabel(types) {
   const list = types || []
-  const specific = list.find((type) => TYPE_LABELS[type] && type !== 'restaurant')
+  // «Para llevar» y «A domicilio» no son un tipo de sitio: el para llevar va aparte en la ficha.
+  const specific = list.find(
+    (type) => TYPE_LABELS[type] && !['restaurant', 'meal_takeaway', 'meal_delivery'].includes(type),
+  )
+  if (!specific && (list.includes('meal_takeaway') || list.includes('meal_delivery'))) return 'Restaurante'
   if (specific) return TYPE_LABELS[specific]
   if (list.includes('restaurant')) return 'Restaurante'
   return null
