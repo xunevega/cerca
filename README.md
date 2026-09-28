@@ -60,3 +60,11 @@ Places API, la clásica, sigue haciendo la búsqueda. Para el rango en euros hay
 - «Ubicación actual» usa solo el GPS y la red del dispositivo. La Geolocation API de Google ya no hace falta.
 
 El contrato vigente es `CONTRATO.md`. Los anteriores están en `contratos/`.
+
+## Publicar en Railway
+
+1. En Railway: New Project → Deploy from GitHub repo → `xunevega/cerca`.
+2. En Variables, añade `GOOGLE_MAPS_API_KEY` y `TRIPADVISOR_API_KEY` (las mismas de `clave.env`).
+3. En Settings → Networking, Generate Domain.
+
+`railway.json` ya dice cómo compilar (`npm run build`) y arrancar (`npm start`). El servidor escucha en el puerto que da Railway (`PORT`).
