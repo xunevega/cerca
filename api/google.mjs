@@ -4,9 +4,8 @@ import {
   closedOnSearchDay,
   distanceMeters,
   eatsHere,
-  localMeanRating,
   MIN_REVIEWS,
-  weightedRating,
+  placeScore,
   todaySchedule,
   COUNTRIES,
   countryOf,
@@ -350,11 +349,10 @@ export async function searchRestaurants(body) {
     .filter((item) => item && item.distanceM <= radius)
     // Con menos de 100 reseñas en Google no hay base para fiarse de la nota.
     .filter((item) => (item.place.user_ratings_total || 0) >= MIN_REVIEWS)
-  // Todos los del radio, ordenados por nota ponderada (a igualdad, el más cercano).
+  // Todos los del radio, por puntuación: nota + reseñas (a igualdad, el más cercano).
   // La nota y las reseñas llegan con la lista cercana: ordenar no cuesta llamadas.
-  const mean = localMeanRating(inRadius.map((item) => item.place))
   const places = inRadius
-    .map((item) => ({ ...item, score: weightedRating(item.place.rating, item.place.user_ratings_total, mean) }))
+    .map((item) => ({ ...item, score: placeScore(item.place.rating, item.place.user_ratings_total) }))
     .sort((a, b) => b.score - a.score || a.distanceM - b.distanceM)
     .slice(0, 30)
 

@@ -199,22 +199,16 @@ export function distanceMeters(a, b) {
   return Math.round(2 * R * Math.asin(Math.min(1, Math.sqrt(h))))
 }
 
-// Nota ponderada (media bayesiana): la nota de Google se acerca a la media de la zona
-// cuando hay pocas reseñas. Un 4,6 con 800 reseñas gana a un 5,0 con 3.
-export const RATING_PRIOR_COUNT = 30
+// Puntuación para ordenar (contrato 4): nota de Google más media estrella cada vez que las
+// reseñas se multiplican por 10. Un 4,1 con 1.242 reseñas (5,65) va por delante de un 4,5
+// con 195 (5,64): las reseñas cuentan de verdad, no solo la nota.
+export const REVIEWS_WEIGHT = 0.5
 // Menos reseñas que esto en Google y el sitio no entra (contrato 4).
 export const MIN_REVIEWS = 100
 
-export function localMeanRating(places) {
-  const rated = places.filter((p) => typeof p.rating === 'number' && (p.user_ratings_total || 0) > 0)
-  if (!rated.length) return 4
-  return rated.reduce((sum, p) => sum + p.rating, 0) / rated.length
-}
-
-export function weightedRating(rating, count, mean, prior = RATING_PRIOR_COUNT) {
-  const votes = typeof count === 'number' && count > 0 && typeof rating === 'number' ? count : 0
-  if (!votes) return mean - 0.25
-  return (votes / (votes + prior)) * rating + (prior / (votes + prior)) * mean
+export function placeScore(rating, count) {
+  if (typeof rating !== 'number' || typeof count !== 'number' || count <= 0) return -Infinity
+  return rating + REVIEWS_WEIGHT * Math.log10(count)
 }
 
 // ¿Se puede comer ahí? (contrato 4). El desayuno no cuenta como comida.

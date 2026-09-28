@@ -1,6 +1,6 @@
 # Cerca
 
-Sitios para comer a la redonda en España y Portugal: restaurantes, bares, cafeterías, tapas o bocadillos. Escribes una dirección de cualquier punto de los dos países (calle, número y ciudad) o usas la ubicación actual, eliges 100, 200 o 300 metros, y la app enseña los seis sitios mejor valorados del radio (nota de Google ponderada por el número de reseñas).
+Sitios para comer a la redonda en España y Portugal: restaurantes, bares, cafeterías, tapas o bocadillos. Escribes una dirección de cualquier punto de los dos países (calle, número y ciudad) o usas la ubicación actual, eliges 100, 200 o 300 metros, y la app enseña los seis sitios mejor valorados del radio (nota de Google más media estrella por cada ×10 reseñas).
 
 La pantalla está siempre en español. La dirección se sitúa con Google Maps; no hay lista de ciudades. La ficha junta la puntuación y las reseñas de Google y, cuando hay ficha, las de TripAdvisor, más el horario, la terraza y una nube hecha con los dos. Ver en Google Maps abre siempre el sitio en Google.
 

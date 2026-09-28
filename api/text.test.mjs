@@ -251,13 +251,14 @@ test('la cola de la noche anterior no cuenta como horario de hoy', () => {
   assert.equal(todaySchedule(null, normal, monday, 'Europe/Madrid'), 'Lunes · 07:00–00:30')
 })
 
-test('la nota ponderada premia muchas reseñas frente a pocas', async () => {
-  const { weightedRating, localMeanRating } = await import('./text.mjs')
-  const mean = localMeanRating([{ rating: 4.2, user_ratings_total: 100 }, { rating: 4.4, user_ratings_total: 50 }])
-  assert.ok(Math.abs(mean - 4.3) < 1e-9)
-  assert.ok(weightedRating(4.6, 800, mean) > weightedRating(5, 3, mean))
-  assert.ok(weightedRating(4.5, 200, mean) > weightedRating(4.2, 200, mean))
-  assert.ok(weightedRating(null, 0, mean) < mean)
+test('la puntuación suma media estrella por cada ×10 reseñas', async () => {
+  const { placeScore } = await import('./text.mjs')
+  const compe = placeScore(4.1, 1242)
+  const sion = placeScore(4.5, 195)
+  assert.ok(compe > sion)
+  assert.ok(Math.abs(placeScore(4, 100) - 5) < 1e-9)
+  assert.ok(Math.abs(placeScore(4, 1000) - 5.5) < 1e-9)
+  assert.equal(placeScore(null, 0), -Infinity)
 })
 
 test('solo entra donde se come: fuera solo para llevar y lo que solo da desayunos', async () => {
