@@ -41,6 +41,7 @@ La clave se queda en el servidor. El navegador no la ve.
 - Solo entran sitios con precio marcado por Google o TripAdvisor
 - Horario del día de la consulta, en la hora local del sitio: Madrid, Canarias, Ceuta, Lisboa, Azores o Madeira
 - Si ese día está cerrado, no entra en la lista. Si abre ese día, sí
+- Solo sitios donde se come: fuera los que son solo para llevar y los que solo dan desayunos (pastelerías, cafés, panaderías), salvo que Google diga que sirven comida o cena
 - Si Google o TripAdvisor marcan para llevar, sale en la ficha
 - Si las reseñas o la información del local dejan claro que hay terraza o que no hay, sale en la ficha. Si no se menciona, no sale
 - Si las reseñas confirman animales, o lo dice el local, sale. Si no, no se enseña

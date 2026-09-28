@@ -69,6 +69,13 @@ No entra un sitio cerrado todo el día de la consulta. Si ese día abre, entra a
 
 No entra un sitio cerrado de forma permanente.
 
+Solo entran sitios donde se puede comer:
+
+- No entra un sitio solo para llevar: si Google dice que no se consume en el local, queda fuera. Que un sitio tenga para llevar es un dato de la ficha, no decide si entra.
+- El desayuno no cuenta como comida. Entra un sitio si Google dice que sirve comida o cena.
+- Si Google no dice nada de comidas ni cenas, se mira su tipo principal: panaderías, pastelerías, cafeterías, cafés, heladerías, bombonerías, teterías, zumerías y sitios de desayunos quedan fuera; restaurantes y bares entran (tapas, bocadillos). Si dice que no sirve ni comida ni cena, queda fuera aunque sea restaurante.
+- El tipo principal sale de Places API (New); si no está disponible, se miran los tipos de la lista cercana de Google.
+
 ## Qué mezcla la ficha
 
 Google y TripAdvisor forman una sola ficha. No hay enlace a TripAdvisor.

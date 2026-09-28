@@ -215,6 +215,42 @@ export function weightedRating(rating, count, mean, prior = RATING_PRIOR_COUNT) 
   return (votes / (votes + prior)) * rating + (prior / (votes + prior)) * mean
 }
 
+// ¿Se puede comer ahí? (contrato 4). El desayuno no cuenta como comida.
+// Tipos de Google que por sí solos no son sitio de comida: solo entran si Google dice que
+// sirven comida o cena.
+const NO_MEAL_TYPES = new Set([
+  'bakery',
+  'cake_shop',
+  'pastry_shop',
+  'cafe',
+  'coffee_shop',
+  'dessert_shop',
+  'dessert_restaurant',
+  'confectionery',
+  'candy_store',
+  'chocolate_shop',
+  'ice_cream_shop',
+  'juice_shop',
+  'tea_house',
+  'donut_shop',
+  'bagel_shop',
+  'breakfast_restaurant',
+  'food_store',
+  'store',
+])
+const MEAL_TYPES = /restaurant$|^restaurant$|^bar$|^pub$|^bar_and_grill$|^wine_bar$|^gastropub$|^meal_takeaway$|^meal_delivery$|^food_court$|^cafeteria$/
+
+export function eatsHere({ dineIn, servesLunch, servesDinner, primaryType, types } = {}) {
+  // Solo para llevar: no se come ahí.
+  if (dineIn === false) return false
+  if (servesLunch === true || servesDinner === true) return true
+  if (servesLunch === false && servesDinner === false) return false
+  const main = primaryType || null
+  if (main) return !NO_MEAL_TYPES.has(main)
+  // Sin tipo principal: vale si alguno de sus tipos es de comida.
+  return (types || []).some((type) => MEAL_TYPES.test(type) && !NO_MEAL_TYPES.has(type))
+}
+
 export function priceLabel(level) {
   if (level == null || level === 'PRICE_LEVEL_UNSPECIFIED') return null
   if (typeof level === 'number') return ['Gratis', '€', '€€', '€€€', '€€€€'][level] ?? null

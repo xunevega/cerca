@@ -3,6 +3,7 @@ import { tripAdvisorSession } from './tripadvisor.mjs'
 import {
   closedOnSearchDay,
   distanceMeters,
+  eatsHere,
   localMeanRating,
   weightedRating,
   todaySchedule,
@@ -146,6 +147,9 @@ async function placeDetails(placeId, key) {
       'business_status',
       'price_level',
       'takeout',
+      'dine_in',
+      'serves_lunch',
+      'serves_dinner',
     ].join(','),
   )
   url.searchParams.set('language', 'es')
@@ -191,6 +195,7 @@ const PLACES_NEW_RETRY_MS = 10 * 60 * 1000
 let placesNew = 'unknown'
 let placesNewOffAt = 0
 
+// Places API (New): rango en euros y tipo principal («cake_shop», «bar»…).
 async function readPriceRange(placeId, key) {
   if (placesNew === 'off' && Date.now() - placesNewOffAt > PLACES_NEW_RETRY_MS) placesNew = 'unknown'
   if (placesNew === 'off' || !placeId) return null
@@ -200,7 +205,7 @@ async function readPriceRange(placeId, key) {
       {
         headers: {
           'X-Goog-Api-Key': key,
-          'X-Goog-FieldMask': 'priceRange',
+          'X-Goog-FieldMask': 'priceRange,primaryType',
         },
       },
     )
@@ -212,13 +217,17 @@ async function readPriceRange(placeId, key) {
     if (!response.ok) return null
     placesNew = 'on'
     const data = await response.json()
-    return pricePerPerson(data.priceRange)
+    return {
+      perPerson: pricePerPerson(data.priceRange),
+      primaryType: typeof data.primaryType === 'string' ? data.primaryType : null,
+    }
   } catch {
     return null
   }
 }
 
-function toRestaurant(place, details, center, perPerson) {
+function toRestaurant(place, details, center, fromNew) {
+  const perPerson = fromNew?.perPerson ?? null
   const closed =
     place.business_status === 'CLOSED_PERMANENTLY' ||
     details?.business_status === 'CLOSED_PERMANENTLY' ||
@@ -227,6 +236,15 @@ function toRestaurant(place, details, center, perPerson) {
   const lat = place.geometry?.location?.lat
   const lng = place.geometry?.location?.lng
   if (typeof lat !== 'number' || typeof lng !== 'number') return null
+  // Fuera lo que es solo para llevar y lo que no sirve comida ni cena (pastelerías, cafés…).
+  const eats = eatsHere({
+    dineIn: details?.dine_in,
+    servesLunch: details?.serves_lunch,
+    servesDinner: details?.serves_dinner,
+    primaryType: fromNew?.primaryType,
+    types: place.types,
+  })
+  if (!eats) return null
 
   const reviews = (details?.reviews || [])
     .map((review) => ({

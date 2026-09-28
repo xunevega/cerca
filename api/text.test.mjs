@@ -259,3 +259,21 @@ test('la nota ponderada premia muchas reseñas frente a pocas', async () => {
   assert.ok(weightedRating(4.5, 200, mean) > weightedRating(4.2, 200, mean))
   assert.ok(weightedRating(null, 0, mean) < mean)
 })
+
+test('solo entra donde se come: fuera solo para llevar y lo que solo da desayunos', async () => {
+  const { eatsHere } = await import('./text.mjs')
+  // Núa para levar (A Coruña): sin consumo en el local.
+  assert.equal(eatsHere({ dineIn: false, servesLunch: true, primaryType: 'meal_takeaway' }), false)
+  // Migas (A Coruña): pastelería que solo da desayunos.
+  assert.equal(eatsHere({ dineIn: true, primaryType: 'cake_shop', types: ['cake_shop', 'breakfast_restaurant', 'cafe'] }), false)
+  // Cafetería que da comidas: entra.
+  assert.equal(eatsHere({ dineIn: true, servesLunch: true, primaryType: 'cafe' }), true)
+  // Bar sin datos de comidas: entra (tapas, bocadillos).
+  assert.equal(eatsHere({ primaryType: 'bar' }), true)
+  assert.equal(eatsHere({ primaryType: 'spanish_restaurant' }), true)
+  // Restaurante que dice no dar ni comida ni cena: fuera.
+  assert.equal(eatsHere({ primaryType: 'restaurant', servesLunch: false, servesDinner: false }), false)
+  // Sin tipo principal (Places API New apagada): se mira la lista de tipos.
+  assert.equal(eatsHere({ types: ['bakery', 'store'] }), false)
+  assert.equal(eatsHere({ types: ['restaurant', 'food'] }), true)
+})
