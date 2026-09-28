@@ -150,6 +150,34 @@ export function queryAddress(input) {
   return String(input || '').trim().replace(/\s+/g, ' ')
 }
 
+// Ciudad escrita en la dirección: lo que va tras la última coma, si no es un número ni un
+// código postal ni el país.
+export function cityFromAddress(address) {
+  const parts = String(address || '').split(',').map((part) => part.trim()).filter(Boolean)
+  if (parts.length < 2) return null
+  const last = parts[parts.length - 1].replace(/^\d{4,5}(-\d{3})?\s*/, '').trim()
+  if (!last || /^\d+$/.test(last)) return null
+  if (/^(espa(n|ñ)a|spain|portugal)$/i.test(last)) {
+    return parts.length > 2 ? cityFromAddress(parts.slice(0, -1).join(', ')) : null
+  }
+  return last
+}
+
+// ¿El resultado de Google está en esa localidad (o municipio)?
+export function localityMatches(result, city) {
+  const want = fold(city).replace(/[^a-z0-9]+/g, ' ').trim()
+  if (!want) return false
+  return (result?.address_components || []).some((component) => {
+    const types = component.types || []
+    if (!types.includes('locality') && !types.includes('administrative_area_level_4') && !types.includes('postal_town')) {
+      return false
+    }
+    return [component.long_name, component.short_name].some(
+      (name) => fold(name || '').replace(/[^a-z0-9]+/g, ' ').trim() === want,
+    )
+  })
+}
+
 export const COUNTRIES = { ES: 'España', PT: 'Portugal' }
 
 export function countryOf(result) {

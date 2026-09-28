@@ -30,16 +30,32 @@ La zona sale del país y de la posición del punto buscado, y vale para todos lo
 ## Cómo se busca
 
 - Un solo campo, «Dirección», de 3 a 180 caracteres: calle, número y ciudad, como se escribiría en un sobre. Se pide a Google tal cual, sin añadir ciudad ni país.
-- Vale el primer resultado de Google que caiga en España o Portugal y que sea una calle, un número, un barrio o un lugar concreto. Si Google solo sitúa una ciudad, una provincia, una región o un código postal, no se busca: hace falta la calle.
+- Si la dirección trae ciudad (lo que va tras la última coma, sin contar el código postal ni el país), primero se busca la calle dentro de esa localidad. Vale el primer resultado que esté en esa localidad, en España o Portugal, y que sea una calle, un número, un barrio o un lugar concreto. Así «Calle Santa Clara 10, Zamora» es la ciudad de Zamora y no un pueblo de la provincia de Zamora.
+- Si ahí no aparece, o la dirección no trae ciudad, vale el primer resultado de Google que caiga en España o Portugal y que sea una calle, un número, un barrio o un lugar concreto. Si Google solo sitúa una ciudad, una provincia, una región o un código postal, no se busca: hace falta la calle.
 - Si no se escribe la ciudad, Google elige dónde está esa calle. La cabecera del resultado siempre dice qué dirección se ha usado.
 - Radio solo 100, 200 o 300 metros. Al cambiar el radio se enseña el resultado de la última búsqueda para ese radio (ver «Cambiar de radio»).
 - Tres atajos en pantalla, solo para probar: Gran Vía 28, Madrid · Rua Augusta 100, Lisboa · Calle Corrida 20, Gijón. Un atajo borra la ubicación actual, rellena la dirección y busca.
 - Si se edita la dirección a mano, se deja de usar el punto de ubicación actual. Si en ese momento se estaba leyendo el GPS, esa lectura se descarta.
-- Tipos de Google: restaurante, bar, cafetería, para llevar y panadería. De cada tipo, Google da los 20 sitios más destacados dentro del radio. Se quitan los repetidos.
-- Todos los sitios del radio se ordenan por puntuación: la nota de Google más media estrella cada vez que las reseñas se multiplican por 10 (nota + 0,5 × log10 de reseñas). Así cuentan la nota y el número de reseñas: un 4,1 con 1.242 reseñas va por delante de un 4,5 con 195. A igual puntuación, va antes el más cercano.
-- Se toman los 30 primeros. Luego se quedan los que tienen precio y no están cerrados todo el día de la consulta. De esos, los 6 primeros, en ese orden.
-- Al cambiar el radio cambia la lista: a 300 m pueden entrar sitios mejor valorados que no caben en 200 m.
-- Esos 30 se revisan en tandas de 8, de mayor a menor puntuación, y se para al tener seis. El resultado es el mismo que revisar los 30; solo cambia cuántas fichas se piden a Google y a TripAdvisor.
+
+## Cómo se elige la lista, paso a paso
+
+Estas reglas son las mismas en cualquier dirección de España o Portugal. No hay excepciones por ciudad, calle ni local.
+
+1. **Candidatos.** Se piden a Google cinco listas, una por tipo: restaurante, bar, cafetería, para llevar y panadería. De cada tipo, Google da los 20 sitios más destacados dentro del radio. Se juntan y se quitan los repetidos.
+2. **Dentro del radio.** Se quita todo sitio a más distancia que el radio elegido (100, 200 o 300 m), medida en línea recta desde la dirección.
+3. **Mínimo de reseñas.** Se quita todo sitio con menos de 100 reseñas en Google.
+4. **Puntuación.** A cada sitio que queda se le da una puntuación: nota de Google + 0,5 × log10(reseñas de Google). Es decir, la nota más media estrella cada vez que las reseñas se multiplican por 10 (100 reseñas suman 1; 1.000 suman 1,5; 10.000 suman 2).
+5. **Orden.** Se ordenan de mayor a menor puntuación. A igual puntuación, va antes el más cercano. Se toman los 30 primeros.
+6. **Filtros de cada sitio.** Se revisan en ese orden y se descarta el que falle una sola de estas reglas (detalladas en «Quién entra en la lista»):
+   - cerrado de forma permanente;
+   - solo para llevar, o que no sirve comida ni cena;
+   - sin precio en Google ni en TripAdvisor;
+   - cerrado todo el día de la consulta, en la hora local.
+7. **Resultado.** Salen los 6 primeros que pasan los filtros, en el orden de la puntuación. Si pasan menos de 6, salen los que haya. Si no pasa ninguno, se dice.
+
+Por el paso 4, al cambiar el radio cambia la lista: con un radio mayor entran sitios que puntúan más y quedaban fuera.
+
+Por eficiencia, los 30 se revisan en tandas de 8 y se para al tener seis. El resultado es el mismo que revisar los 30; solo cambia cuántas fichas se piden a Google y a TripAdvisor.
 
 ## Ubicación actual
 
@@ -71,7 +87,7 @@ No entra un sitio cerrado de forma permanente.
 
 No entra un sitio con menos de 100 reseñas en Google: con pocas reseñas la nota no es de fiar.
 
-No hay regla de número de fotos: Google no da el recuento y el de TripAdvisor no refleja la realidad (La Compe, en A Coruña, tiene más de 200 fotos en Google y 22 en TripAdvisor).
+No hay regla de número de fotos ni de carta: la API de Google no da el recuento de fotos ni sus categorías (carta, comida, vídeos…), y el recuento de TripAdvisor no refleja el de Google.
 
 Solo entran sitios donde se puede comer:
 

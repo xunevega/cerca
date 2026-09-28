@@ -69,3 +69,12 @@ El contrato vigente es `CONTRATO.md`. Los anteriores están en `contratos/`.
 3. En Settings → Networking, Generate Domain.
 
 `railway.json` ya dice cómo compilar (`npm run build`) y arrancar (`npm start`). El servidor escucha en el puerto que da Railway (`PORT`).
+
+## Comprobar el contrato
+
+```bash
+node scripts/verificar-contrato.mjs                       # lista repartida por España y Portugal
+node scripts/verificar-contrato.mjs URL "Calle X 1, Soria" # cualquier dirección
+```
+
+Busca cada dirección a 100, 200 y 300 m en la app publicada y comprueba en cada resultado las reglas que se ven desde fuera: como mucho 6 sitios, todos dentro del radio, al menos 100 reseñas, con precio, abiertos hoy y en orden de puntuación. Las reglas internas (qué es sitio de comidas, para llevar, idiomas) las cubren los tests (`npm test`).

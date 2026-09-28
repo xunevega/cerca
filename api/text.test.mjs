@@ -282,3 +282,20 @@ test('solo entra donde se come: fuera solo para llevar y lo que solo da desayuno
   assert.equal(eatsHere({ types: ['bakery', 'store'] }), false)
   assert.equal(eatsHere({ types: ['restaurant', 'food'] }), true)
 })
+
+test('la ciudad escrita manda: Zamora es la ciudad, no un pueblo de la provincia', async () => {
+  const { cityFromAddress, localityMatches } = await import('./text.mjs')
+  assert.equal(cityFromAddress('Calle Santa Clara 10, Zamora'), 'Zamora')
+  assert.equal(cityFromAddress('Calle Santa Clara 10, 49001 Zamora'), 'Zamora')
+  assert.equal(cityFromAddress('Calle Santa Clara 10, Zamora, España'), 'Zamora')
+  assert.equal(cityFromAddress('Rua Augusta 100, Lisboa, Portugal'), 'Lisboa')
+  assert.equal(cityFromAddress('Calle Mayor 5'), null)
+  const villalobos = { address_components: [
+    { long_name: 'Villalobos', types: ['locality', 'political'] },
+    { long_name: 'Zamora', types: ['administrative_area_level_2', 'political'] },
+  ] }
+  const zamora = { address_components: [{ long_name: 'Zamora', types: ['locality', 'political'] }] }
+  assert.equal(localityMatches(villalobos, 'Zamora'), false)
+  assert.equal(localityMatches(zamora, 'Zamora'), true)
+  assert.equal(localityMatches({ address_components: [{ long_name: 'A Coruña', types: ['locality'] }] }, 'a coruña'), true)
+})

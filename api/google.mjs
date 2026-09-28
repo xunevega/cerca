@@ -8,7 +8,9 @@ import {
   placeScore,
   todaySchedule,
   COUNTRIES,
+  cityFromAddress,
   countryOf,
+  localityMatches,
   preciseEnough,
   zoneFor,
   isPhotoRef,
@@ -80,20 +82,38 @@ async function reverseGeocode(lat, lng, key) {
   return originFrom(match, lat, lng, `Tu ubicación en ${COUNTRIES[country]}`)
 }
 
-async function geocode(address, key) {
+async function geocodeRequest(address, key, locality) {
   const url = new URL('https://maps.googleapis.com/maps/api/geocode/json')
   url.searchParams.set('address', queryAddress(address))
   url.searchParams.set('region', 'es')
   url.searchParams.set('language', 'es')
+  if (locality) url.searchParams.set('components', `locality:${locality}`)
   url.searchParams.set('key', key)
-
   const response = await googleFetch(url)
   const data = await response.json()
-  if (data.status === 'ZERO_RESULTS') {
+  if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') throw geocodeStatus(data)
+  return data.results || []
+}
+
+async function geocode(address, key) {
+  // Si la dirección trae ciudad (lo que va tras la última coma), primero se busca la calle
+  // dentro de esa localidad: «Santa Clara 10, Zamora» es la ciudad de Zamora, no un pueblo de
+  // la provincia. Solo si ahí no aparece se busca sin restricción (contrato 4).
+  const city = cityFromAddress(address)
+  if (city) {
+    const scoped = (await geocodeRequest(address, key, city)).filter(
+      (result) => countryOf(result) && preciseEnough(result) && localityMatches(result, city),
+    )
+    if (scoped.length) {
+      const { lat, lng } = scoped[0].geometry.location
+      return originFrom(scoped[0], lat, lng, scoped[0].formatted_address)
+    }
+  }
+  const results = await geocodeRequest(address, key)
+  if (!results.length) {
     throw fail(404, 'No encuentro esa dirección. Revisa la calle, el número y la ciudad.')
   }
-  if (data.status !== 'OK') throw geocodeStatus(data)
-  const inside = (data.results || []).filter((result) => countryOf(result))
+  const inside = results.filter((result) => countryOf(result))
   if (!inside.length) throw fail(404, OUTSIDE)
   const match = inside.find(preciseEnough)
   if (!match) {
