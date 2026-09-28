@@ -83,12 +83,13 @@ async function reverseGeocode(lat, lng, key) {
   return originFrom(match, lat, lng, `Tu ubicación en ${COUNTRIES[country]}`)
 }
 
-async function geocodeRequest(address, key, locality) {
+async function geocodeRequest(address, key, locality, country = 'ES') {
   const url = new URL('https://maps.googleapis.com/maps/api/geocode/json')
   url.searchParams.set('address', queryAddress(address))
   url.searchParams.set('region', 'es')
   url.searchParams.set('language', 'es')
-  if (locality) url.searchParams.set('components', `locality:${locality}`)
+  // Google solo respeta la localidad si va junto al país.
+  if (locality) url.searchParams.set('components', `locality:${locality}|country:${country}`)
   url.searchParams.set('key', key)
   const response = await googleFetch(url)
   const data = await response.json()
@@ -104,12 +105,14 @@ async function geocode(address, key) {
   if (city) {
     // La ciudad va solo como filtro: si también va en el texto, Google la lee como provincia.
     const street = streetFromAddress(address)
-    const scoped = (await geocodeRequest(street || address, key, city)).filter(
-      (result) => countryOf(result) && preciseEnough(result) && localityMatches(result, city),
-    )
-    if (scoped.length) {
-      const { lat, lng } = scoped[0].geometry.location
-      return originFrom(scoped[0], lat, lng, scoped[0].formatted_address)
+    for (const country of ['ES', 'PT']) {
+      const scoped = (await geocodeRequest(street || address, key, city, country)).filter(
+        (result) => countryOf(result) && preciseEnough(result) && localityMatches(result, city),
+      )
+      if (scoped.length) {
+        const { lat, lng } = scoped[0].geometry.location
+        return originFrom(scoped[0], lat, lng, scoped[0].formatted_address)
+      }
     }
   }
   const results = await geocodeRequest(address, key)
