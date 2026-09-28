@@ -9,6 +9,7 @@ import {
   todaySchedule,
   COUNTRIES,
   cityFromAddress,
+  streetFromAddress,
   countryOf,
   localityMatches,
   preciseEnough,
@@ -101,7 +102,9 @@ async function geocode(address, key) {
   // la provincia. Solo si ahí no aparece se busca sin restricción (contrato 4).
   const city = cityFromAddress(address)
   if (city) {
-    const scoped = (await geocodeRequest(address, key, city)).filter(
+    // La ciudad va solo como filtro: si también va en el texto, Google la lee como provincia.
+    const street = streetFromAddress(address)
+    const scoped = (await geocodeRequest(street || address, key, city)).filter(
       (result) => countryOf(result) && preciseEnough(result) && localityMatches(result, city),
     )
     if (scoped.length) {

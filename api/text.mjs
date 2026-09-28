@@ -163,6 +163,23 @@ export function cityFromAddress(address) {
   return last
 }
 
+// La dirección sin la ciudad, el código postal ni el país: «Calle Santa Clara 10».
+export function streetFromAddress(address) {
+  const parts = String(address || '').split(',').map((part) => part.trim()).filter(Boolean)
+  const city = cityFromAddress(address)
+  const cityKey = city ? fold(city) : null
+  while (parts.length > 1) {
+    const last = parts[parts.length - 1]
+    const bare = last.replace(/^\d{4,5}(-\d{3})?\s*/, '').trim()
+    const isCountry = /^(espa(n|ñ)a|spain|portugal)$/i.test(bare)
+    const isPostal = /^\d{4,5}(-\d{3})?$/.test(last)
+    const isCity = cityKey && fold(bare) === cityKey
+    if (isCountry || isPostal || isCity) parts.pop()
+    else break
+  }
+  return parts.join(', ')
+}
+
 // ¿El resultado de Google está en esa localidad (o municipio)?
 export function localityMatches(result, city) {
   const want = fold(city).replace(/[^a-z0-9]+/g, ' ').trim()
@@ -240,14 +257,11 @@ export function placeScore(rating, count) {
 }
 
 // ¿Se puede comer ahí? (contrato 4). El desayuno no cuenta como comida.
-// Tipos de Google que por sí solos no son sitio de comida: solo entran si Google dice que
-// sirven comida o cena.
-const NO_MEAL_TYPES = new Set([
+// Dulce: fuera siempre, aunque Google diga que sirven comidas (pastelerías, heladerías…).
+const SWEET_TYPES = new Set([
   'bakery',
   'cake_shop',
   'pastry_shop',
-  'cafe',
-  'coffee_shop',
   'dessert_shop',
   'dessert_restaurant',
   'confectionery',
@@ -257,8 +271,14 @@ const NO_MEAL_TYPES = new Set([
   'juice_shop',
   'tea_house',
   'donut_shop',
-  'bagel_shop',
+])
+// Cafés y desayunos: solo entran si Google dice que sirven comida o cena.
+const NO_MEAL_TYPES = new Set([
+  ...SWEET_TYPES,
+  'cafe',
+  'coffee_shop',
   'breakfast_restaurant',
+  'bagel_shop',
   'food_store',
   'store',
 ])
@@ -282,6 +302,7 @@ const MEAL_TYPES = /restaurant$|^restaurant$|^bar$|^pub$|^bar_and_grill$|^wine_b
 export function eatsHere({ dineIn, servesLunch, servesDinner, primaryType, types } = {}) {
   // Solo para llevar: no se come ahí.
   if (dineIn === false) return false
+  if (primaryType && SWEET_TYPES.has(primaryType)) return false
   if (servesLunch === true || servesDinner === true) return true
   if (servesLunch === false && servesDinner === false) return false
   const main = primaryType || null

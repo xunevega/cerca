@@ -267,6 +267,9 @@ test('solo entra donde se come: fuera solo para llevar y lo que solo da desayuno
   assert.equal(eatsHere({ dineIn: false, servesLunch: true, primaryType: 'meal_takeaway' }), false)
   // Migas (A Coruña): pastelería que solo da desayunos.
   assert.equal(eatsHere({ dineIn: true, primaryType: 'cake_shop', types: ['cake_shop', 'breakfast_restaurant', 'cafe'] }), false)
+  // Heladería o pastelería: fuera aunque Google diga que da comidas.
+  assert.equal(eatsHere({ dineIn: true, servesLunch: true, primaryType: 'ice_cream_shop' }), false)
+  assert.equal(eatsHere({ dineIn: true, servesLunch: true, servesDinner: true, primaryType: 'bakery' }), false)
   // Cafetería que da comidas: entra.
   assert.equal(eatsHere({ dineIn: true, servesLunch: true, primaryType: 'cafe' }), true)
   // Bar sin datos de comidas: fuera. Bar que da comidas: entra.
@@ -290,6 +293,11 @@ test('la ciudad escrita manda: Zamora es la ciudad, no un pueblo de la provincia
   assert.equal(cityFromAddress('Calle Santa Clara 10, Zamora, España'), 'Zamora')
   assert.equal(cityFromAddress('Rua Augusta 100, Lisboa, Portugal'), 'Lisboa')
   assert.equal(cityFromAddress('Calle Mayor 5'), null)
+  const { streetFromAddress } = await import('./text.mjs')
+  assert.equal(streetFromAddress('Calle Santa Clara 10, Zamora'), 'Calle Santa Clara 10')
+  assert.equal(streetFromAddress('Calle Santa Clara 10, 49001 Zamora, España'), 'Calle Santa Clara 10')
+  assert.equal(streetFromAddress('Rua Augusta 100, Lisboa, Portugal'), 'Rua Augusta 100')
+  assert.equal(streetFromAddress('Calle Mayor 5'), 'Calle Mayor 5')
   const villalobos = { address_components: [
     { long_name: 'Villalobos', types: ['locality', 'political'] },
     { long_name: 'Zamora', types: ['administrative_area_level_2', 'political'] },
