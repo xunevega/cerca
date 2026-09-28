@@ -71,7 +71,7 @@ No entra un sitio cerrado de forma permanente.
 
 No entra un sitio con menos de 100 reseñas en Google: con pocas reseñas la nota no es de fiar.
 
-Fotos: tiene que haber más de 50 fotos en Google o en TripAdvisor. Google no da el recuento de fotos (su API nunca entrega más de 10), así que solo se puede medir en TripAdvisor: un sitio con ficha en TripAdvisor entra si allí tiene más de 50 fotos; un sitio sin ficha en TripAdvisor no se puede medir y se juzga por el resto de reglas.
+No hay regla de número de fotos: Google no da el recuento y el de TripAdvisor no refleja la realidad (La Compe, en A Coruña, tiene más de 200 fotos en Google y 22 en TripAdvisor).
 
 Solo entran sitios donde se puede comer:
 

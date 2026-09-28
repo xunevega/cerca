@@ -302,7 +302,6 @@ function toRestaurant(place, details, center, fromNew) {
 }
 
 const MAX_RESULTS = 6
-const MIN_TA_PHOTOS = 50
 const BATCH = 8
 
 async function readPriceRanges(batch, key) {
@@ -375,10 +374,7 @@ export async function searchRestaurants(body) {
     for (const restaurant of await tripAdvisor.enrich(candidates)) {
       const priced =
         restaurant.priceLabel || restaurant.pricePerPerson || restaurant.tripAdvisor?.priceLevel
-      // Más de 50 fotos en TripAdvisor. Google no da el recuento (nunca pasa de 10 fotos), así
-      // que un sitio sin ficha en TripAdvisor no se puede medir y se juzga por lo demás.
-      const photos = restaurant.tripAdvisor ? (restaurant.tripAdvisor.photoCount ?? 0) > MIN_TA_PHOTOS : true
-      if (priced && photos && !closedOnSearchDay(restaurant.todayHours)) accepted.push(restaurant)
+      if (priced && !closedOnSearchDay(restaurant.todayHours)) accepted.push(restaurant)
     }
   }
 
