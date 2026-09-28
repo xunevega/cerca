@@ -5,6 +5,7 @@ import {
   distanceMeters,
   eatsHere,
   localMeanRating,
+  MIN_REVIEWS,
   weightedRating,
   todaySchedule,
   COUNTRIES,
@@ -301,6 +302,7 @@ function toRestaurant(place, details, center, fromNew) {
 }
 
 const MAX_RESULTS = 6
+const MIN_TA_PHOTOS = 50
 const BATCH = 8
 
 async function readPriceRanges(batch, key) {
@@ -347,6 +349,8 @@ export async function searchRestaurants(body) {
       return { place, distanceM: distanceMeters(origin, { lat, lng }) }
     })
     .filter((item) => item && item.distanceM <= radius)
+    // Con menos de 100 reseñas en Google no hay base para fiarse de la nota.
+    .filter((item) => (item.place.user_ratings_total || 0) >= MIN_REVIEWS)
   // Todos los del radio, ordenados por nota ponderada (a igualdad, el más cercano).
   // La nota y las reseñas llegan con la lista cercana: ordenar no cuesta llamadas.
   const mean = localMeanRating(inRadius.map((item) => item.place))
@@ -371,7 +375,10 @@ export async function searchRestaurants(body) {
     for (const restaurant of await tripAdvisor.enrich(candidates)) {
       const priced =
         restaurant.priceLabel || restaurant.pricePerPerson || restaurant.tripAdvisor?.priceLevel
-      if (priced && !closedOnSearchDay(restaurant.todayHours)) accepted.push(restaurant)
+      // Más de 50 fotos en TripAdvisor. Google no da el recuento (nunca pasa de 10 fotos), así
+      // que un sitio sin ficha en TripAdvisor no se puede medir y se juzga por lo demás.
+      const photos = restaurant.tripAdvisor ? (restaurant.tripAdvisor.photoCount ?? 0) > MIN_TA_PHOTOS : true
+      if (priced && photos && !closedOnSearchDay(restaurant.todayHours)) accepted.push(restaurant)
     }
   }
 

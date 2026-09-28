@@ -202,6 +202,8 @@ export function distanceMeters(a, b) {
 // Nota ponderada (media bayesiana): la nota de Google se acerca a la media de la zona
 // cuando hay pocas reseñas. Un 4,6 con 800 reseñas gana a un 5,0 con 3.
 export const RATING_PRIOR_COUNT = 30
+// Menos reseñas que esto en Google y el sitio no entra (contrato 4).
+export const MIN_REVIEWS = 100
 
 export function localMeanRating(places) {
   const rated = places.filter((p) => typeof p.rating === 'number' && (p.user_ratings_total || 0) > 0)
@@ -238,6 +240,21 @@ const NO_MEAL_TYPES = new Set([
   'food_store',
   'store',
 ])
+// Bares: solo entran si Google dice que sirven comida o cena (fuera los de copas).
+const BAR_TYPES = new Set([
+  'bar',
+  'pub',
+  'wine_bar',
+  'gastropub',
+  'cocktail_bar',
+  'sports_bar',
+  'irish_pub',
+  'beer_hall',
+  'beer_garden',
+  'lounge_bar',
+  'night_club',
+  'hookah_bar',
+])
 const MEAL_TYPES = /restaurant$|^restaurant$|^bar$|^pub$|^bar_and_grill$|^wine_bar$|^gastropub$|^meal_takeaway$|^meal_delivery$|^food_court$|^cafeteria$/
 
 export function eatsHere({ dineIn, servesLunch, servesDinner, primaryType, types } = {}) {
@@ -246,9 +263,11 @@ export function eatsHere({ dineIn, servesLunch, servesDinner, primaryType, types
   if (servesLunch === true || servesDinner === true) return true
   if (servesLunch === false && servesDinner === false) return false
   const main = primaryType || null
-  if (main) return !NO_MEAL_TYPES.has(main)
-  // Sin tipo principal: vale si alguno de sus tipos es de comida.
-  return (types || []).some((type) => MEAL_TYPES.test(type) && !NO_MEAL_TYPES.has(type))
+  if (main) return !NO_MEAL_TYPES.has(main) && !BAR_TYPES.has(main)
+  // Sin tipo principal: vale si alguno de sus tipos es de comida (un bar solo no basta).
+  return (types || []).some(
+    (type) => MEAL_TYPES.test(type) && !NO_MEAL_TYPES.has(type) && !BAR_TYPES.has(type),
+  )
 }
 
 export function priceLabel(level) {

@@ -38,6 +38,7 @@ export type Restaurant = {
     rating: number | null
     reviewCount: number | null
     priceLevel: string | null
+    photoCount: number | null
   } | null
 }
 

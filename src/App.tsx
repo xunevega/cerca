@@ -287,7 +287,7 @@ export function App() {
             </div>
             {result.restaurants.length === 0 ? (
               <p className="empty">
-                Ningún sitio abierto hoy en ese radio tiene precio en Google o en TripAdvisor. Prueba con 200 o 300 metros.
+                Ningún sitio de comidas en ese radio cumple todo: abierto hoy, con precio y con al menos 100 reseñas en Google. Prueba con un radio mayor.
               </p>
             ) : (
               <ol>

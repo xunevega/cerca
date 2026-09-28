@@ -69,11 +69,16 @@ No entra un sitio cerrado todo el día de la consulta. Si ese día abre, entra a
 
 No entra un sitio cerrado de forma permanente.
 
+No entra un sitio con menos de 100 reseñas en Google: con pocas reseñas la nota no es de fiar.
+
+Fotos: tiene que haber más de 50 fotos en Google o en TripAdvisor. Google no da el recuento de fotos (su API nunca entrega más de 10), así que solo se puede medir en TripAdvisor: un sitio con ficha en TripAdvisor entra si allí tiene más de 50 fotos; un sitio sin ficha en TripAdvisor no se puede medir y se juzga por el resto de reglas.
+
 Solo entran sitios donde se puede comer:
 
 - No entra un sitio solo para llevar: si Google dice que no se consume en el local, queda fuera. Que un sitio tenga para llevar es un dato de la ficha, no decide si entra.
 - El desayuno no cuenta como comida. Entra un sitio si Google dice que sirve comida o cena.
-- Si Google no dice nada de comidas ni cenas, se mira su tipo principal: panaderías, pastelerías, cafeterías, cafés, heladerías, bombonerías, teterías, zumerías y sitios de desayunos quedan fuera; restaurantes y bares entran (tapas, bocadillos). Si dice que no sirve ni comida ni cena, queda fuera aunque sea restaurante.
+- Si Google no dice nada de comidas ni cenas, se mira su tipo principal: panaderías, pastelerías, cafeterías, cafés, heladerías, bombonerías, teterías, zumerías y sitios de desayunos quedan fuera, y también los bares, pubs y bares de copas. Los restaurantes entran. Si Google dice que no sirve ni comida ni cena, queda fuera aunque sea restaurante.
+- Un bar solo entra si Google dice que sirve comida o cena.
 - El tipo principal sale de Places API (New); si no está disponible, se miran los tipos de la lista cercana de Google.
 
 ## Qué mezcla la ficha

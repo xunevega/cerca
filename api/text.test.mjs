@@ -268,8 +268,12 @@ test('solo entra donde se come: fuera solo para llevar y lo que solo da desayuno
   assert.equal(eatsHere({ dineIn: true, primaryType: 'cake_shop', types: ['cake_shop', 'breakfast_restaurant', 'cafe'] }), false)
   // Cafetería que da comidas: entra.
   assert.equal(eatsHere({ dineIn: true, servesLunch: true, primaryType: 'cafe' }), true)
-  // Bar sin datos de comidas: entra (tapas, bocadillos).
-  assert.equal(eatsHere({ primaryType: 'bar' }), true)
+  // Bar sin datos de comidas: fuera. Bar que da comidas: entra.
+  assert.equal(eatsHere({ primaryType: 'bar' }), false)
+  assert.equal(eatsHere({ primaryType: 'irish_pub' }), false)
+  assert.equal(eatsHere({ primaryType: 'bar', servesLunch: true }), true)
+  assert.equal(eatsHere({ types: ['bar', 'point_of_interest'] }), false)
+  assert.equal(eatsHere({ primaryType: 'bar_and_grill' }), true)
   assert.equal(eatsHere({ primaryType: 'spanish_restaurant' }), true)
   // Restaurante que dice no dar ni comida ni cena: fuera.
   assert.equal(eatsHere({ primaryType: 'restaurant', servesLunch: false, servesDinner: false }), false)
